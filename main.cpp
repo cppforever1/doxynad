@@ -14,19 +14,19 @@
 
 void handle_config()
 {
-    bool configExists = doxy_config::instance().config_exists();
+    const bool configExists = doxy_config::instance().config_exists();
+    const std::string configfile = doxy_config::instance().get_config_file();
 
-    
     if (configExists)
     {
         // load existing config
-        std::cout << "Found existing doxyfile, loading..." << std::endl;
+        spdlog::info("Found existing doxyfile, loading {}", configfile);
         doxy_config::instance().load_config();
     }
     else
     {
         // create default config
-        std::cout << "No doxyfile found, creating default one..." << std::endl;
+        spdlog::info("No doxyfile found, creating one {}", configfile);
         doxy_config::instance().create_doxyfile();
         doxy_config::instance().load_config();
         doxy_config::instance().overwrite_def_values();
