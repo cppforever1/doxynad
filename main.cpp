@@ -8,25 +8,25 @@
 #include "system_util.hpp"
 #include "doxy_config.hpp"
 
-doxy_config &gconfig = doxy_config::instance();
-
 void handle_config()
 {
     bool configExists = doxy_config::instance().config_exists();
 
+    
     if (configExists)
     {
+        // load existing config
         std::cout << "Found existing doxyfile, loading..." << std::endl;
         doxy_config::instance().load_config();
     }
     else
     {
+        // create default config
         std::cout << "No doxyfile found, creating default one..." << std::endl;
         doxy_config::instance().create_doxyfile();
         doxy_config::instance().load_config();
         doxy_config::instance().overwrite_def_values();
     }
-
 
     doxy_config::instance().handle_user_input();
     doxy_config::instance().save_config();

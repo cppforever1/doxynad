@@ -40,7 +40,12 @@ public:
     std::string get_running_directory()
     {
         return std::filesystem::current_path().string();
-    }   
+    }
+
+    bool test_sudo()
+    {
+        return std::getenv("SUDO_USER") != nullptr;
+    }
 
     void open_with_default_browser(const std::string &path)
     {
@@ -67,21 +72,51 @@ public:
     {
         const std::string doxygen_file = "/usr/bin/doxygen";
         if (!std::filesystem::exists(doxygen_file))
-            run_command("sudo apt-get install doxygen");
+        {
+            if (test_sudo())
+            {
+                run_command("sudo apt-get install doxygen");
+            }
+            else
+            {
+                std::cout << "Doxygen is not installed. Please install it manually or run this program with sudo." << std::endl;
+                exit(1);
+            }
+        }
     }
 
     void install_graphviz()
     {
         const std::string graphviz_file = "/usr/bin/dot";
         if (!std::filesystem::exists(graphviz_file))
-            run_command("sudo apt-get install graphviz");
+        {
+            if (test_sudo())
+            {
+                run_command("sudo apt-get install graphviz");
+            }
+            else
+            {
+                std::cout << "Graphviz is not installed. Please install it manually or run this program with sudo." << std::endl;
+                exit(1);
+            }
+        }
     }
 
     void install_figlet()
     {
         const std::string figlet_file = "/usr/bin/figlet";
         if (!std::filesystem::exists(figlet_file))
-            run_command("sudo apt-get install figlet");
+        {
+            if (test_sudo())
+            {
+                run_command("sudo apt-get install figlet");
+            }
+            else
+            {
+                std::cout << "Figlet is not installed. Please install it manually or run this program with sudo." << std::endl;
+                exit(1);
+            }
+        }
     }
 
     bool user_input(const std::string &key, std::string &def_val, bool canbeempty)
