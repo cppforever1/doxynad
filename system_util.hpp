@@ -5,6 +5,8 @@
 #include <filesystem>
 #include <cstdlib>
 #include <sys/wait.h>
+#include <spdlog/spdlog.h>
+#include <cstdio> // for fdopen, getline, fclose
 
 class system_util
 {
@@ -20,6 +22,113 @@ public:
     system_util(system_util &&) = delete;
     system_util &operator=(system_util &&) = delete;
 
+    void run_and_log(const std::string &cmd)
+    {
+        int out_pipe[2];
+        int err_pipe[2];
+
+        if (pipe(out_pipe) == -1)
+        {
+            spdlog::error("pipe(out_pipe) failed");
+            return;
+        }
+
+        if (pipe(err_pipe) == -1)
+        {
+            spdlog::error("pipe(err_pipe) failed");
+            close(out_pipe[0]);
+            close(out_pipe[1]);
+            return;
+        }
+
+        pid_t pid = fork();
+
+        if (pid < 0)
+        {
+            spdlog::error("fork() failed");
+            close(out_pipe[0]);
+            close(out_pipe[1]);
+            close(err_pipe[0]);
+            close(err_pipe[1]);
+            return;
+        }
+
+        if (pid == 0)
+        {
+            // Child
+            dup2(out_pipe[1], STDOUT_FILENO);
+            dup2(err_pipe[1], STDERR_FILENO);
+
+            close(out_pipe[0]);
+            close(out_pipe[1]);
+            close(err_pipe[0]);
+            close(err_pipe[1]);
+
+            execl("/bin/sh", "sh", "-c", cmd.c_str(), (char *)nullptr);
+            _exit(127);
+        }
+
+        // Parent
+        close(out_pipe[1]);
+        close(err_pipe[1]);
+
+        FILE *out_stream = fdopen(out_pipe[0], "r");
+        FILE *err_stream = fdopen(err_pipe[0], "r");
+
+        if (!out_stream || !err_stream)
+        {
+            spdlog::error("fdopen failed");
+
+            if (out_stream)
+            {
+                fclose(out_stream);
+            }
+            else
+            {
+                close(out_pipe[0]);
+            }
+
+            if (err_stream)
+            {
+                fclose(err_stream);
+            }
+            else
+            {
+                close(err_pipe[0]);
+            }
+
+            int status = 0;
+            waitpid(pid, &status, 0);
+            return;
+        }
+
+        char *line = nullptr;
+        size_t cap = 0;
+        ssize_t nread = 0;
+
+        while ((nread = getline(&line, &cap, out_stream)) != -1)
+        {
+            if (nread > 0 && line[nread - 1] == '\n')
+                line[nread - 1] = '\0';
+                
+            spdlog::info("{}", line);
+        }
+
+        while ((nread = getline(&line, &cap, err_stream)) != -1)
+        {
+            if (nread > 0 && line[nread - 1] == '\n')
+                line[nread - 1] = '\0';
+            spdlog::error("{}", line);
+        }
+
+        free(line);
+        fclose(out_stream); // also closes out_pipe[0]
+        fclose(err_stream); // also closes err_pipe[0]
+
+        int status = 0;
+        waitpid(pid, &status, 0);
+    }
+
     void run_command(const std::string &cmd)
     {
         const int returnCode = std::system(cmd.c_str());
@@ -30,8 +139,8 @@ public:
             if (WIFEXITED(returnCode))
                 exitCode = WEXITSTATUS(returnCode);
 
-            std::cout << "Command " << cmd << " fail with error: " << exitCode << std::endl;
-            std::cout << "Hit any key to exit..." << std::endl;
+            spdlog::error("Command {} failed with error: {}", cmd, exitCode);
+            spdlog::info("Hit any key to exit...");
             getchar();
             exit(exitCode);
         }
@@ -64,8 +173,8 @@ public:
         if (command_exists("gio") && try_command("gio open " + quotedPath + " >/dev/null 2>&1"))
             return;
 
-        std::cout << "Failed to open browser automatically for: " << absolutePath << std::endl;
-        std::cout << "Install one of: wslu (wslview), xdg-utils (xdg-open), or gio." << std::endl;
+        spdlog::error("Failed to open browser automatically for: {}", absolutePath);
+        spdlog::info("Install one of: wslu (wslview), xdg-utils (xdg-open), or gio.");
     }
 
     void install_doxygen()
@@ -79,7 +188,7 @@ public:
             }
             else
             {
-                std::cout << "Doxygen is not installed. Please install it manually or run this program with sudo." << std::endl;
+                spdlog::error("Doxygen is not installed. Please install it manually or run this program with sudo.");
                 exit(1);
             }
         }
@@ -96,7 +205,7 @@ public:
             }
             else
             {
-                std::cout << "Graphviz is not installed. Please install it manually or run this program with sudo." << std::endl;
+                spdlog::error("Graphviz is not installed. Please install it manually or run this program with sudo.");
                 exit(1);
             }
         }
@@ -113,7 +222,7 @@ public:
             }
             else
             {
-                std::cout << "Figlet is not installed. Please install it manually or run this program with sudo." << std::endl;
+                spdlog::error("Figlet is not installed. Please install it manually or run this program with sudo.");
                 exit(1);
             }
         }
@@ -126,15 +235,15 @@ public:
             std::string value;
 
             if (def_val != "")
-                std::cout << key << " ? [" << def_val << "] ";
+                spdlog::info("{} ? [{}] ", key, def_val);
             else
-                std::cout << key << " ? ";
+                spdlog::info("{} ? ", key);
 
             std::getline(std::cin, value, '\n');
 
             if (value != "")
             {
-                std::cout << "updated " << value << std::endl;
+                spdlog::info("updated {}", value);
                 def_val = value;
                 return true;
             }
@@ -151,12 +260,22 @@ private:
 
     bool command_exists(const std::string &command)
     {
-        return std::system(("command -v " + command + " >/dev/null 2>&1").c_str()) == 0;
+        spdlog::info("Checking if command exists: {}", command);
+        std::string cmd = "command -v " + command + " >/dev/null 2>&1";
+
+        bool exists = std::system(cmd.c_str()) == 0;
+        spdlog::info("Command {} exists: {}", command, exists);
+
+        return exists;
     }
 
     bool try_command(const std::string &command)
     {
+        spdlog::info("Trying command: {}", command);
+
         const int returnCode = std::system(command.c_str());
+        spdlog::info("Command returned code: {}", returnCode);
+
         if (returnCode == 0)
             return true;
 

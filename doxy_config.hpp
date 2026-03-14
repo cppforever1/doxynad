@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <fstream>
 #include <vector>
+#include <spdlog/spdlog.h>
 
 #include "system_util.hpp"
 #include "string_trim.hpp"
@@ -30,7 +31,17 @@ public:
             doxyfile = config_file;
         
         if (!std::filesystem::exists(doxyfile))
+        {
             system_util::instance().run_command(config_file_cmd);
+
+            if (!std::filesystem::exists(doxyfile))
+            {
+                spdlog::error("Failed to create doxyfile at: {}", doxyfile);
+                spdlog::info("Hit any key to exit...");
+                getchar();
+                exit(1);
+            }
+        }
     }
 
     bool config_exists(std::string doxyfile = "")
@@ -54,8 +65,8 @@ public:
 
         if (!std::filesystem::exists(doxyfile))
         {
-            std::cout << "Failed to find " << doxyfile << std::endl;
-            std::cout << "Hit any key to exit..." << std::endl;
+            spdlog::error("Failed to find {}", doxyfile);
+            spdlog::info("Hit any key to exit...");
             getchar();
             exit(1);
         }
@@ -70,11 +81,13 @@ public:
         }
         else
         {
-            std::cout << "Failed to open " << doxyfile << std::endl;
-            std::cout << "Hit any key to exit..." << std::endl;
+            spdlog::error("Failed to open {}", doxyfile);
+            spdlog::info("Hit any key to exit...");
             getchar();
             exit(1);
         }
+
+        spdlog::info("Loaded config file: {} with {} lines", doxyfile, lines.size());
 
         return lines.size();
     }
@@ -98,6 +111,15 @@ public:
             conf.flush();
             conf.close();
         }
+        else
+        {
+            spdlog::error("Failed to save {}", doxyfile);
+            spdlog::info("Hit any key to exit...");
+            getchar();
+            exit(1);
+        }
+
+        spdlog::info("Saved config file: {} with {} lines", doxyfile, line_count);
 
         return line_count;
     }
@@ -203,7 +225,7 @@ public:
 
     void update_value(const std::string &key, const std::string &value)
     {
-        for (auto &line : lines)
+        for (std::string &line : lines)
         {
             if (line.size() == 0)
                 continue;
@@ -228,7 +250,7 @@ public:
         }
     }
 
-    std::string get_doxy_cmd()
+    std::string get_doxy_cmd() const
     {
         return doxygen_file_cmd;
     }
@@ -236,6 +258,11 @@ public:
     void set_config_file(const std::string &file)
     {
         config_file = file;
+    }
+
+    std::string get_config_file() const
+    {
+        return config_file;
     }
 
 private:

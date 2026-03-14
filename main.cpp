@@ -7,6 +7,10 @@
 #include "string_trim.hpp"
 #include "system_util.hpp"
 #include "doxy_config.hpp"
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/daily_file_sink.h>
 
 void handle_config()
 {
@@ -39,29 +43,57 @@ void handle_install()
     system_util::instance().install_figlet();
 }
 
+// initialize spdlog with default settings for file and console color logging
+void init_logger()
+{
+    auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+    console_sink->set_level(spdlog::level::trace);
+    console_sink->set_pattern("%v");
+
+    auto file_sink = std::make_shared<spdlog::sinks::daily_file_sink_mt>("logs/daily.txt", 0, 0, false, 60);
+    file_sink->set_level(spdlog::level::trace);
+    file_sink->set_pattern("[%Y-%m-%d %H:%M:%S] [%l] %v");
+
+    std::vector<spdlog::sink_ptr> sinks{console_sink, file_sink};
+    auto logger = std::make_shared<spdlog::logger>("multi_sink", sinks.begin(), sinks.end());
+    logger->set_level(spdlog::level::trace);
+
+    spdlog::set_default_logger(logger);
+
+    std::string starline(40, '*');
+    spdlog::info(" {} DoxyNad started {}", starline, starline);
+}
+
 int main(int argc, char **argv)
 {
+    init_logger();
+
     if (argc == 2)
     {
+        // set config file path from argument
         std::string configfilename = argv[1];
-        std::cout << "Received argument config file path: " << configfilename << std::endl;
+        spdlog::info("Received argument config file path: {}", configfilename);
         doxy_config::instance().set_config_file(configfilename);
     }
     else
     {
-        std::cout << "No config file argument provided, using default: " << doxy_config::instance().get_doxy_cmd() << std::endl;
+        // no config file argument provided, using default
+        spdlog::info("No config file argument provided, using default: {}", doxy_config::instance().get_config_file());
     }
 
-    std::cout << "Running in directory: " << system_util::instance().get_running_directory() << std::endl;
+    spdlog::info("Running in directory: {}", system_util::instance().get_running_directory());
 
+    // install dependencies
     handle_install();
+
+    // handle doxyfile config
     handle_config();
 
     // banner
     system_util::instance().run_command("figlet DoxyNad from code to documentation");
 
     // run doxygen & build html
-    system_util::instance().run_command(doxy_config::instance().get_doxy_cmd());
+    system_util::instance().run_and_log(doxy_config::instance().get_doxy_cmd());
 
     const std::string outputDirectory = doxy_config::instance()["OUTPUT_DIRECTORY"];
     const std::string htmlFile = outputDirectory + "/html/index.html";
@@ -69,10 +101,10 @@ int main(int argc, char **argv)
 
     if (std::filesystem::exists(absoluteHtmlFile))
     {
-        std::cout << "Documentation generated successfully at: " << absoluteHtmlFile << std::endl;
+        spdlog::info("Documentation generated successfully at: {}", absoluteHtmlFile);
     }
     else
     {
-        std::cout << "Failed to generate documentation." << std::endl;
+        spdlog::error("Failed to generate documentation.");
     }
 }
