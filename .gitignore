@@ -5,6 +5,7 @@
 /bin/
 /obj/
 /output/
+/logs/
 
 # CMake
 CMakeCache.txt
