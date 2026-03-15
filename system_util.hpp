@@ -110,8 +110,8 @@ public:
         {
             if (nread > 0 && line[nread - 1] == '\n')
                 line[nread - 1] = '\0';
-                
-            spdlog::info("{}", line);
+
+            spdlog::trace("{}", line);
         }
 
         while ((nread = getline(&line, &cap, err_stream)) != -1)
