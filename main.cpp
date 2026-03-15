@@ -63,6 +63,36 @@ void init_logger()
     spdlog::info(" {} DoxyNad started {}", starline, starline);
 }
 
+
+void test_config()
+{
+        auto header = doxy_config::instance().get_header();
+    for (const auto &line : header)
+    {
+        spdlog::info("{}", line);
+    }
+
+    auto sections = doxy_config::instance().get_sections();
+    spdlog::info("Config sections:");
+    for (const auto &section : sections)
+    {
+        spdlog::info(" - {}", section);
+    }
+
+    auto keys = doxy_config::instance().get_keys_params();
+    spdlog::info("Config keys:");
+    for (const auto &key : keys)
+    {
+        spdlog::info(" - {}", key);
+    }
+
+    auto help = doxy_config::instance().get_key_help("OUTPUT_DIRECTORY");
+    spdlog::info("Help for key OUTPUT_DIRECTORY:");
+    for (const auto &line : help)    {
+        spdlog::info("{}", line);
+    }
+}
+
 int main(int argc, char **argv)
 {
     init_logger();
@@ -87,6 +117,8 @@ int main(int argc, char **argv)
 
     // handle doxyfile config
     handle_config();
+
+    //test_config();
 
     // banner
     system_util::instance().run_command("figlet DoxyNad from code to documentation");

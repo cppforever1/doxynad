@@ -29,7 +29,7 @@ public:
     {
         if (doxyfile == "")
             doxyfile = config_file;
-        
+
         if (!std::filesystem::exists(doxyfile))
         {
             system_util::instance().run_command(config_file_cmd);
@@ -92,6 +92,107 @@ public:
         return lines.size();
     }
 
+    std::vector<std::string> get_header() const
+    {
+        std::string templine;
+        std::vector<std::string> header;
+
+        for (const auto &line : lines)
+        {
+            if (line.find_first_of("#-------------") != std::string::npos)
+                break;
+
+            if (line.size() == 0)
+                continue;
+
+            templine = line.substr(0);
+            templine = string_trim::trim(templine);
+            header.push_back(templine);
+        }
+        return header;
+    }
+
+    std::vector<std::string> get_sections() const
+    {
+        std::string templine;
+        std::vector<std::string> sections;
+
+        for (size_t idx = 0; idx < lines.size(); idx++)
+        {
+            const auto &line = lines[idx];
+
+            if (line.size() == 0)
+                continue;
+
+            if (line.find_first_of("#-------------") != std::string::npos)
+            {
+                templine = lines[++idx].substr(0);
+                templine = string_trim::trim(templine);
+                sections.push_back(templine);
+                idx++; // skip next line which is ------------- separator
+            }
+        }
+        return sections;
+    }
+
+    std::vector<std::string> get_keys_params() const
+    {
+        std::string templine;
+        std::vector<std::string> keys;
+
+        for (const auto &line : lines)
+        {
+            if (line.size() == 0)
+                continue;
+
+            if (line[0] == '#')
+                continue;
+
+            if (line.find_first_of("=") != std::string::npos)
+            {
+                templine = line.substr(0, line.find_first_of("="));
+                templine = string_trim::trim(templine);
+                keys.push_back(templine);
+            }
+        }
+        return keys;
+    }
+
+    std::vector<std::string> get_key_help(const std::string &key) const
+    {
+        std::vector<std::string> help;
+
+        for (size_t idx = lines.size() -1; idx > 0; idx--)
+        {
+            const auto &line = lines[idx];
+
+            if (line.size() == 0)
+                continue;
+
+            if (line.find(key) != std::string::npos)
+            {
+                for(size_t subidx = idx - 1; subidx > 0; subidx--)
+                {
+                    const auto &hline = lines[subidx];
+
+                    if (hline.size() == 0)
+                        continue;
+
+                    std::string templine = hline.substr(0);
+                    templine = string_trim::trim(templine);
+                    help.insert(help.begin(), templine);
+
+                    if (line.find("-") != std::string::npos)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+
+        return help;
+    }
+
     size_t save_config(std::string doxyfile = "")
     {
         size_t line_count = 0;
@@ -100,7 +201,7 @@ public:
             doxyfile = config_file;
 
         std::ofstream conf(doxyfile, std::ofstream::trunc);
-        
+
         if (conf.is_open())
         {
             for (auto &line : lines)
@@ -158,74 +259,73 @@ public:
         std::string key, value;
         key = "PROJECT_NAME";
         value = get_value(key);
-        if(system_util::instance().user_input(key, value, true))
+        if (system_util::instance().user_input(key, value, true))
             update_value(key, value);
 
         key = "PROJECT_NUMBER";
         value = get_value(key);
-        if(system_util::instance().user_input(key, value, true))
+        if (system_util::instance().user_input(key, value, true))
             update_value(key, value);
 
         key = "PROJECT_BRIEF";
         value = get_value(key);
-        if(system_util::instance().user_input(key, value, true))
+        if (system_util::instance().user_input(key, value, true))
             update_value(key, value);
 
         key = "OUTPUT_DIRECTORY";
         value = get_value(key);
-        if(system_util::instance().user_input(key, value, true))
+        if (system_util::instance().user_input(key, value, true))
             update_value(key, value);
 
         key = "TAB_SIZE";
         value = get_value(key);
-        if(system_util::instance().user_input(key, value, true))
+        if (system_util::instance().user_input(key, value, true))
             update_value(key, value);
 
         key = "INPUT";
         value = get_value(key);
-        if(system_util::instance().user_input(key, value, true))
+        if (system_util::instance().user_input(key, value, true))
             update_value(key, value);
 
         key = "RECURSIVE";
         value = get_value(key);
-        if(system_util::instance().user_input(key, value, true))
+        if (system_util::instance().user_input(key, value, true))
             update_value(key, value);
 
         key = "ENUM_VALUES_PER_LINE";
         value = get_value(key);
-        if(system_util::instance().user_input(key, value, true))
+        if (system_util::instance().user_input(key, value, true))
             update_value(key, value);
 
-        key= "INLINE_INHERITED_MEMB";
+        key = "INLINE_INHERITED_MEMB";
         value = get_value(key);
-        if(system_util::instance().user_input(key, value, true))
+        if (system_util::instance().user_input(key, value, true))
             update_value(key, value);
 
         key = "REFERENCED_BY_RELATION";
         value = get_value(key);
-        if(system_util::instance().user_input(key, value, true))
+        if (system_util::instance().user_input(key, value, true))
             update_value(key, value);
 
         key = "REFERENCES_RELATION";
         value = get_value(key);
-        if(system_util::instance().user_input(key, value, true))
+        if (system_util::instance().user_input(key, value, true))
             update_value(key, value);
 
         key = "CLANG_ASSISTED_PARSING";
         value = get_value(key);
-        if(system_util::instance().user_input(key, value, true))
+        if (system_util::instance().user_input(key, value, true))
             update_value(key, value);
 
         key = "HTML_DYNAMIC_SECTIONS";
         value = get_value(key);
-        if(system_util::instance().user_input(key, value, true))
+        if (system_util::instance().user_input(key, value, true))
             update_value(key, value);
 
-            key = "EXCLUDE";
+        key = "EXCLUDE";
         value = get_value(key);
-        if(system_util::instance().user_input(key, value, true))
+        if (system_util::instance().user_input(key, value, true))
             update_value(key, value);
-
     }
 
     std::string operator[](const std::string &key)
