@@ -99,16 +99,19 @@ public:
 
         for (const auto &line : lines)
         {
-            if (line.find_first_of("#-------------") != std::string::npos)
+            if (line.size() > 0 && line.find("#-------------") != std::string::npos)
                 break;
 
-            if (line.size() == 0)
-                continue;
+            templine = line;
 
-            templine = line.substr(0);
+            // remove leading # if found and trim
+            if (templine.size() > 0 && templine[0] == '#')
+                templine = templine.substr(1);
+
             templine = string_trim::trim(templine);
             header.push_back(templine);
         }
+
         return header;
     }
 
@@ -124,9 +127,9 @@ public:
             if (line.size() == 0)
                 continue;
 
-            if (line.find_first_of("#-------------") != std::string::npos)
+            if (line.find("#-------------") != std::string::npos)
             {
-                templine = lines[++idx].substr(0);
+                templine = lines[++idx].substr(1); // remove leading #
                 templine = string_trim::trim(templine);
                 sections.push_back(templine);
                 idx++; // skip next line which is ------------- separator
@@ -148,7 +151,7 @@ public:
             if (line[0] == '#')
                 continue;
 
-            if (line.find_first_of("=") != std::string::npos)
+            if (line.find("=") != std::string::npos)
             {
                 templine = line.substr(0, line.find_first_of("="));
                 templine = string_trim::trim(templine);
@@ -162,30 +165,30 @@ public:
     {
         std::vector<std::string> help;
 
-        for (size_t idx = lines.size() -1; idx > 0; idx--)
+        for (size_t idx = lines.size() - 1; idx > 0; idx--)
         {
             const auto &line = lines[idx];
 
             if (line.size() == 0)
                 continue;
 
-            if (line.find(key) != std::string::npos)
+            if (line.find(key) == 0 && line.find("=") != std::string::npos)
             {
-                for(size_t subidx = idx - 1; subidx > 0; subidx--)
+                for (size_t subidx = idx - 1; subidx > 0; subidx--)
                 {
                     const auto &hline = lines[subidx];
 
                     if (hline.size() == 0)
                         continue;
 
-                    std::string templine = hline.substr(0);
-                    templine = string_trim::trim(templine);
-                    help.insert(help.begin(), templine);
-
-                    if (line.find("-") != std::string::npos)
+                    if (hline.find("=") != std::string::npos)
                     {
                         break;
                     }
+
+                    std::string templine = hline.substr(1); // remove leading #
+                    templine = string_trim::trim(templine);
+                    help.insert(help.begin(), templine);
                 }
             }
         }
