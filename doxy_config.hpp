@@ -139,6 +139,13 @@ public:
         update_value("MACRO_EXPANSION", "YES");
         update_value("CALL_GRAPH", "YES");
         update_value("CALLER_GRAPH", "YES");
+        update_value("ALLOW_UNICODE_NAMES", "YES");
+        update_value("INLINE_INHERITED_MEMB", "YES");
+        update_value("REFERENCED_BY_RELATION", "YES");
+        update_value("REFERENCES_RELATION", "YES");
+        update_value("CLANG_ASSISTED_PARSING", "YES");
+        update_value("HTML_DYNAMIC_SECTIONS", "YES");
+        update_value("EXCLUDE", "out output build");
     }
 
     void clear_config()
@@ -151,43 +158,74 @@ public:
         std::string key, value;
         key = "PROJECT_NAME";
         value = get_value(key);
-        if(system_util::instance().user_input("PROJECT_NAME", value, true))
+        if(system_util::instance().user_input(key, value, true))
             update_value(key, value);
 
         key = "PROJECT_NUMBER";
         value = get_value(key);
-        if(system_util::instance().user_input("PROJECT_NUMBER", value, true))
+        if(system_util::instance().user_input(key, value, true))
             update_value(key, value);
 
         key = "PROJECT_BRIEF";
         value = get_value(key);
-        if(system_util::instance().user_input("PROJECT_BRIEF", value, true))
+        if(system_util::instance().user_input(key, value, true))
             update_value(key, value);
 
         key = "OUTPUT_DIRECTORY";
         value = get_value(key);
-        if(system_util::instance().user_input("OUTPUT_DIRECTORY", value, true))
+        if(system_util::instance().user_input(key, value, true))
             update_value(key, value);
 
         key = "TAB_SIZE";
         value = get_value(key);
-        if(system_util::instance().user_input("TAB_SIZE", value, true))
+        if(system_util::instance().user_input(key, value, true))
             update_value(key, value);
 
         key = "INPUT";
         value = get_value(key);
-        if(system_util::instance().user_input("INPUT", value, true))
+        if(system_util::instance().user_input(key, value, true))
             update_value(key, value);
 
         key = "RECURSIVE";
         value = get_value(key);
-        if(system_util::instance().user_input("RECURSIVE", value, true))
+        if(system_util::instance().user_input(key, value, true))
             update_value(key, value);
 
         key = "ENUM_VALUES_PER_LINE";
         value = get_value(key);
-        if(system_util::instance().user_input("ENUM_VALUES_PER_LINE", value, true))
+        if(system_util::instance().user_input(key, value, true))
             update_value(key, value);
+
+        key= "INLINE_INHERITED_MEMB";
+        value = get_value(key);
+        if(system_util::instance().user_input(key, value, true))
+            update_value(key, value);
+
+        key = "REFERENCED_BY_RELATION";
+        value = get_value(key);
+        if(system_util::instance().user_input(key, value, true))
+            update_value(key, value);
+
+        key = "REFERENCES_RELATION";
+        value = get_value(key);
+        if(system_util::instance().user_input(key, value, true))
+            update_value(key, value);
+
+        key = "CLANG_ASSISTED_PARSING";
+        value = get_value(key);
+        if(system_util::instance().user_input(key, value, true))
+            update_value(key, value);
+
+        key = "HTML_DYNAMIC_SECTIONS";
+        value = get_value(key);
+        if(system_util::instance().user_input(key, value, true))
+            update_value(key, value);
+
+            key = "EXCLUDE";
+        value = get_value(key);
+        if(system_util::instance().user_input(key, value, true))
+            update_value(key, value);
+
     }
 
     std::string operator[](const std::string &key)
