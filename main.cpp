@@ -51,13 +51,12 @@ void init_logger()
     console_sink->set_pattern("%v");
 
     auto file_sink = std::make_shared<spdlog::sinks::daily_file_sink_mt>("logs/daily.txt", 0, 0, false, 60);
-    file_sink->set_level(spdlog::level::trace);
+    file_sink->set_level(spdlog::level::info);
     file_sink->set_pattern("[%Y-%m-%d %H:%M:%S] [%l] %v");
 
     std::vector<spdlog::sink_ptr> sinks{console_sink, file_sink};
     auto logger = std::make_shared<spdlog::logger>("multi_sink", sinks.begin(), sinks.end());
     logger->set_level(spdlog::level::trace);
-
     spdlog::set_default_logger(logger);
 
     std::string starline(40, '*');
